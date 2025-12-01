@@ -1,24 +1,20 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-pub const Buffers = struct {
-    a: []const u8,
-    b: []const u8,
+pub const Buffer = struct {
+    data: []const u8,
 
     const Self = @This();
 
     pub fn init(alloc: Allocator, day: comptime_int) !Self {
-        const filename_a = std.fmt.comptimePrint("data/day{d:0>2}a.txt", .{day});
-        const filename_b = std.fmt.comptimePrint("data/day{d:0>2}b.txt", .{day});
+        const filename = std.fmt.comptimePrint("data/day{d:0>2}.txt", .{day});
         return .{
-            .a = try readFile(alloc, filename_a),
-            .b = try readFile(alloc, filename_b),
+            .data = try readFile(alloc, filename),
         };
     }
 
     pub fn deinit(self: *Self, alloc: Allocator) void {
-        alloc.free(self.a);
-        alloc.free(self.b);
+        alloc.free(self.data);
     }
 };
 

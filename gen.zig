@@ -32,36 +32,25 @@ pub fn main() !void {
         };
     }
 }
-
-pub fn readFile(alloc: std.mem.Allocator, filename: []const u8) ![]const u8 {
-    const file = try std.fs.cwd().openFile(filename, .{ .mode = .read_only });
-    defer file.close();
-    var buffer: [1024]u8 = undefined;
-    var filereader = file.reader(&buffer);
-    const reader = &filereader.interface;
-    var file_writer = std.io.Writer.Allocating.init(alloc);
-
-    _ = try reader.streamRemaining(&file_writer.writer);
-
-    return file_writer.toOwnedSlice();
-}
+const util = @import("src/util.zig");
+const readFile = util.ReadFile;
 
 const example_day =
     \\const std = @import("std");
     \\const Allocator = std.mem.Allocator;
     \\
     \\const util = @import("../util.zig");
-    \\const Buffers = util.Buffers;
+    \\const Buffer = util.Buffer;
     \\const readInt = util.readInt;
     \\
     \\pub fn run(alloc: std.mem.Allocator, stdout: *std.io.Writer) !void {{
-    \\    var buffers = try Buffers.init(alloc, {d});
-    \\    defer buffers.deinit(alloc);
+    \\    var buffer = try Buffer.init(alloc, {d});
+    \\    defer buffer.deinit(alloc);
     \\
     \\    var timer = try std.time.Timer.start();
-    \\    const p1 = try part1(alloc, buffers.a);
+    \\    const p1 = try part1(alloc, buffer.data);
     \\    const p1_time = timer.lap();
-    \\    const p2 = try part2(alloc, buffers.b);
+    \\    const p2 = try part2(alloc, buffer.data);
     \\    const p2_time = timer.read();
     \\    try stdout.print(
     \\        \\Day{d:0>2}:

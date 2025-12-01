@@ -2,17 +2,17 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 const util = @import("../util.zig");
-const Buffers = util.Buffers;
+const Buffer = util.Buffer;
 const readInt = util.readInt;
 
 pub fn run(alloc: std.mem.Allocator, stdout: *std.io.Writer) !void {
-    var buffers = try Buffers.init(alloc, 11);
-    defer buffers.deinit(alloc);
+    var buffer = try Buffer.init(alloc, 11);
+    defer buffer.deinit(alloc);
 
     var timer = try std.time.Timer.start();
-    const p1 = try part1(alloc, buffers.a);
+    const p1 = try part1(alloc, buffer.data);
     const p1_time = timer.lap();
-    const p2 = try part2(alloc, buffers.b);
+    const p2 = try part2(alloc, buffer.data);
     const p2_time = timer.read();
     try stdout.print(
         \\Day11:
