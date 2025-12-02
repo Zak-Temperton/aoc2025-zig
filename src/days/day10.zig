@@ -36,3 +36,19 @@ fn part2(alloc: Allocator, input: []const u8) !u32 {
     _ = input;
     return 0;
 }
+
+test "part1" {
+  const alloc = std.testing.allocator;
+  const input = "";
+  const expected = 0;
+  const actual = try part1(alloc, input);
+  try std.testing.expectEqual(expected, actual);
+}
+
+test "part2" {
+  const alloc = std.testing.allocator;
+  const input = "";
+  const expected = 0;
+  const actual = try part2(alloc, input);
+  try std.testing.expectEqual(expected, actual);
+}
