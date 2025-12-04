@@ -78,4 +78,3 @@ test "part2" {
     const actual = part2(input);
     try std.testing.expectEqual(expected, actual);
 }
-
