@@ -32,7 +32,7 @@ fn sortRange(_: void, left: Range, right: Range) bool {
 }
 
 fn createRanges(alloc: Allocator, input: []const u8, index: *usize) ![]Range {
-    var ranges = try std.ArrayList(Range).initCapacity(alloc, 32);
+    var ranges = try std.ArrayList(Range).initCapacity(alloc, 200);
     defer ranges.deinit(alloc);
 
     while (input[index.*] != '\n') {
@@ -45,7 +45,7 @@ fn createRanges(alloc: Allocator, input: []const u8, index: *usize) ![]Range {
     }
 
     std.mem.sort(Range, ranges.items, {}, sortRange);
-    var new_ranges = try std.ArrayList(Range).initCapacity(alloc, 32);
+    var new_ranges = try std.ArrayList(Range).initCapacity(alloc, ranges.items.len);
 
     for (ranges.items) |new_range| {
         var merged = false;
@@ -64,11 +64,19 @@ fn createRanges(alloc: Allocator, input: []const u8, index: *usize) ![]Range {
             if (merged) break;
         }
         if (!merged) {
-            try new_ranges.append(alloc, new_range);
+            new_ranges.appendAssumeCapacity(new_range);
         }
     }
 
     return new_ranges.toOwnedSlice(alloc);
+}
+
+fn compareFn(context: u64, range: Range) std.math.Order {
+    if (context >= range.lower and context <= range.upper) {
+        return .eq;
+    } else {
+        return std.math.order(context, range.lower);
+    }
 }
 
 fn part1(alloc: Allocator, input: []const u8) !u32 {
@@ -76,14 +84,12 @@ fn part1(alloc: Allocator, input: []const u8) !u32 {
     const ranges = try createRanges(alloc, input, &index);
     defer alloc.free(ranges);
     var fresh: u32 = 0;
+
     while (index < input.len) {
         const num = readInt(u64, input, &index);
         index += 1;
-        for (ranges) |range| {
-            if (num >= range.lower and num <= range.upper) {
-                fresh += 1;
-                break;
-            }
+        if (std.sort.binarySearch(Range, ranges, num, compareFn)) |_| {
+            fresh += 1;
         }
     }
     return fresh;
