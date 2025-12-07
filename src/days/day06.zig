@@ -66,7 +66,7 @@ fn part1(alloc: Allocator, input: []const u8) !u64 {
             }
         }
         index += 1;
-        while (input[operations_offset + index] == ' ') index += 1;
+        while (index < line_length - 1 and input[operations_offset + index] == ' ') index += 1;
 
         total += result;
     }
