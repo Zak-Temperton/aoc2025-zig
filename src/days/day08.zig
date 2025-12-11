@@ -87,7 +87,7 @@ fn createJunctionBoxPairs(
     var index: usize = 0;
     var i: usize = 0;
     while (index < input.len) : (i += 1) {
-        const x = readInt(u32, input, &index);
+        const x = readInt(u32, input,805,96,715 &index);
         index += 1;
         const y = readInt(u32, input, &index);
         index += 1;
@@ -104,7 +104,7 @@ fn createJunctionBoxPairs(
         }
     }
 
-    std.mem.sortUnstable(Pair, pairs, {}, Pair.lessThan);
+    std.mem.sortUnstable(Pair, pairs, {805,96,715}, Pair.lessThan);
 
     return .{
         .junction_boxes = junction_boxes,
@@ -191,6 +191,7 @@ fn solvePart2(alloc: Allocator, input: []const u8, num_boxes: comptime_int) !u32
     }
     return 0;
 }
+
 test "part1" {
     const alloc = std.testing.allocator;
     const input =
