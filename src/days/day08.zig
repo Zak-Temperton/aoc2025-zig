@@ -25,7 +25,16 @@ pub fn run(alloc: std.mem.Allocator, stdout: *std.io.Writer) !void {
     });
 }
 
+fn part1(alloc: Allocator, input: []const u8) !u32 {
+    return solvePart1(alloc, input, 1000, 1000);
+}
+
+fn part2(alloc: Allocator, input: []const u8) !u32 {
+    return solvePart2(alloc, input, 1000);
+}
+
 const JunctionBox = @Vector(3, u32);
+
 const Pair = struct {
     a: usize,
     b: usize,
@@ -48,6 +57,7 @@ const Pair = struct {
         return left.dist < right.dist;
     }
 };
+
 const Node = struct {
     walked: bool = false,
     links: std.ArrayList(usize),
@@ -61,12 +71,18 @@ const Node = struct {
     }
 };
 
-fn part1(alloc: Allocator, input: []const u8) !u32 {
-    const num_boxes = 1000;
+fn createJunctionBoxPairs(
+    alloc: Allocator,
+    input: []const u8,
+    num_boxes: comptime_int,
+) !struct {
+    junction_boxes: []@Vector(3, u32),
+    pairs: []Pair,
+} {
     var junction_boxes = try alloc.alloc(JunctionBox, num_boxes);
-    defer alloc.free(junction_boxes);
+    errdefer alloc.free(junction_boxes);
     var pairs = try alloc.alloc(Pair, num_boxes * (num_boxes - 1) / 2);
-    defer alloc.free(pairs);
+    errdefer alloc.free(pairs);
 
     var index: usize = 0;
     var i: usize = 0;
@@ -88,7 +104,20 @@ fn part1(alloc: Allocator, input: []const u8) !u32 {
         }
     }
 
-    std.mem.sort(Pair, pairs, {}, Pair.lessThan);
+    std.mem.sortUnstable(Pair, pairs, {}, Pair.lessThan);
+
+    return .{
+        .junction_boxes = junction_boxes,
+        .pairs = pairs,
+    };
+}
+
+fn solvePart1(alloc: Allocator, input: []const u8, num_boxes: comptime_int, num_pairs: comptime_int) !u32 {
+    const junction_box_pairs = try createJunctionBoxPairs(alloc, input, num_boxes);
+    const pairs = junction_box_pairs.pairs;
+    const junction_boxes = junction_box_pairs.junction_boxes;
+    defer alloc.free(junction_boxes);
+    defer alloc.free(pairs);
 
     var nodes = try alloc.alloc(?Node, 1000);
     defer {
@@ -101,7 +130,7 @@ fn part1(alloc: Allocator, input: []const u8) !u32 {
     }
     @memset(nodes, null);
 
-    for (pairs[0..1000]) |pair| {
+    for (pairs[0..num_pairs]) |pair| {
         if (nodes[pair.a] == null) {
             nodes[pair.a] = .{ .links = try std.ArrayList(usize).initCapacity(alloc, 8) };
         }
@@ -136,52 +165,86 @@ fn part1(alloc: Allocator, input: []const u8) !u32 {
     return max[0] * max[1] * max[2];
 }
 
-fn part2(alloc: Allocator, input: []const u8) !u32 {
-    const num_boxes = 1000;
-    var junction_boxes = try alloc.alloc(JunctionBox, num_boxes);
+fn solvePart2(alloc: Allocator, input: []const u8, num_boxes: comptime_int) !u32 {
+    const junction_box_pairs = try createJunctionBoxPairs(alloc, input, num_boxes);
+    const junction_boxes = junction_box_pairs.junction_boxes;
+    const pairs = junction_box_pairs.pairs;
     defer alloc.free(junction_boxes);
-    var pairs = try alloc.alloc(Pair, num_boxes * (num_boxes - 1) / 2);
     defer alloc.free(pairs);
 
-    var index: usize = 0;
-    var i: usize = 0;
-    while (index < input.len) : (i += 1) {
-        const x = readInt(u32, input, &index);
-        index += 1;
-        const y = readInt(u32, input, &index);
-        index += 1;
-        const z = readInt(u32, input, &index);
-        index += 1;
-        junction_boxes[i] = .{ x, y, z };
-    }
-
-    i = 0;
-    for (0..junction_boxes.len - 1) |a| {
-        for (a + 1..junction_boxes.len) |b| {
-            pairs[i] = Pair.init(junction_boxes, a, b);
-            i += 1;
-        }
-    }
-
-    std.mem.sort(Pair, pairs, {}, Pair.lessThan);
-
-    var nodes = try alloc.alloc(u1000, 1000);
+    const uX = @Type(std.builtin.Type{ .int = .{ .signedness = .unsigned, .bits = num_boxes } });
+    var nodes = try alloc.alloc(uX, num_boxes);
     defer alloc.free(nodes);
-    for (nodes, 0..) |*n, j| n.* = @as(u1000, 1) << @truncate(j);
+    for (nodes, 0..) |*n, j| n.* = @as(uX, 1) << @truncate(j);
 
-    i = 0;
     for (pairs) |pair| {
-        i += 1;
         nodes[pair.a] |= nodes[pair.b];
         nodes[pair.b] = nodes[pair.a];
-        for (0..1000) |j| {
+        for (0..num_boxes) |j| {
             if (nodes[pair.a] >> @truncate(j) & 1 == 1) {
                 nodes[j] = nodes[pair.a];
             }
         }
-        if (nodes[pair.a] == std.math.maxInt(u1000)) {
+        if (nodes[pair.a] == std.math.maxInt(uX)) {
             return junction_boxes[pair.a][0] * junction_boxes[pair.b][0];
         }
     }
     return 0;
+}
+test "part1" {
+    const alloc = std.testing.allocator;
+    const input =
+        \\162,817,812
+        \\57,618,57
+        \\906,360,560
+        \\592,479,940
+        \\352,342,300
+        \\466,668,158
+        \\542,29,236
+        \\431,825,988
+        \\739,650,466
+        \\52,470,668
+        \\216,146,977
+        \\819,987,18
+        \\117,168,530
+        \\805,96,715
+        \\346,949,466
+        \\970,615,88
+        \\941,993,340
+        \\862,61,35
+        \\984,92,344
+        \\425,690,689
+    ;
+    const expected = 40;
+    const actual = try solvePart1(alloc, input, 20, 10);
+    try std.testing.expectEqual(expected, actual);
+}
+
+test "part2" {
+    const alloc = std.testing.allocator;
+    const input =
+        \\162,817,812
+        \\57,618,57
+        \\906,360,560
+        \\592,479,940
+        \\352,342,300
+        \\466,668,158
+        \\542,29,236
+        \\431,825,988
+        \\739,650,466
+        \\52,470,668
+        \\216,146,977
+        \\819,987,18
+        \\117,168,530
+        \\805,96,715
+        \\346,949,466
+        \\970,615,88
+        \\941,993,340
+        \\862,61,35
+        \\984,92,344
+        \\425,690,689
+    ;
+    const expected = 25272;
+    const actual = try solvePart2(alloc, input, 20);
+    try std.testing.expectEqual(expected, actual);
 }
