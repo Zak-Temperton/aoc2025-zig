@@ -191,6 +191,7 @@ fn solvePart2(alloc: Allocator, input: []const u8, num_boxes: comptime_int) !u32
     }
     return 0;
 }
+
 test "part1" {
     const alloc = std.testing.allocator;
     const input =
